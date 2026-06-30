@@ -1,25 +1,20 @@
-import os
-from dotenv import load_dotenv
-from google.genai import types
+"""
+main.py - Summer chatbot entry point (FastAPI)
 
-# 1. This MUST be at the very top so the credentials load first
-load_dotenv()
+Keep this file small and focused on wiring.
+All interesting logic should live in their own modules (chat_log.py, routes/, etc).
+"""
+
+from dotenv import load_dotenv
+load_dotenv()  # credentials first
 
 from fastapi import FastAPI
-from google import genai
-from google.cloud import firestore
-from pydantic import BaseModel
+from routes.chat import router as chat_router
 
-# 2. Initialize your clients after loading env variables
-db = firestore.Client(project=os.getenv("GCP_PROJECT_ID"))
-client = genai.Client()
-app = FastAPI()
+app = FastAPI(title="Summer", description="Truth-seeking chatbot")
 
-# 3. Request structure
-class ChatRequest(BaseModel):
-    message: str
-    session_id: str
+app.include_router(chat_router)   # mounts /chat
 
 @app.get("/")
 def home():
-    return {"status": "Chatbot engine is running!"}
+    return {"status": "Summer is running. Use POST /chat"}

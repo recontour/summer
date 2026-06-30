@@ -1,0 +1,13 @@
+# Summer bot dependencies
+# Install with: pip install -r requirements.txt
+
+fastapi
+uvicorn[standard]
+python-dotenv
+
+# Google AI + Firestore
+google-genai
+google-cloud-firestore
+
+# For PDF ingestion (optional for chat)
+PyPDF2

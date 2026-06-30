@@ -1,4 +1,10 @@
 .env
 __pycache__/
 *.pyc
+
+# Service account / GCP / Firebase credentials - NEVER COMMIT THESE
 gcp-key.json
+*firebase-adminsdk*.json
+*service-account*.json
+refine-rack-ecc0e-firebase-adminsdk-fbsvc-8b75b113b1.json
+*.json
