@@ -34,6 +34,12 @@ load_dotenv()
 EMBEDDING_MODEL = "text-embedding-004"
 KNOWLEDGE_COLLECTION = "knowledge_base"
 
+# Vector search distance. 
+# "COSINE" is the usual default for text embeddings.
+# Change to "EUCLIDEAN" or "DOT_PRODUCT" to match how you created the index in Firestore.
+# We'll verify after your first test.
+DISTANCE_MEASURE = "COSINE"
+
 # ------------------------------------------------------------------
 # Internal lazy clients
 # ------------------------------------------------------------------
@@ -98,7 +104,7 @@ def retrieve_relevant(query: str, limit: int = 5) -> list[str]:
             vector_field="embedding",
             query_vector=query_vector,
             limit=limit,
-            distance_measure="COSINE",   # good default for text embeddings
+            distance_measure=DISTANCE_MEASURE,
         )
 
         chunks: list[str] = []
