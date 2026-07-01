@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.cloud import firestore
 from google.cloud.firestore_v1.vector import Vector
+from google.genai import types
 
 load_dotenv()
 
@@ -28,8 +29,12 @@ def process_pdf(file_path):
     
     for i, chunk in enumerate(chunks):
         response = client.models.embed_content(
-            model="text-embedding-004", 
-            contents=chunk
+            model="gemini-embedding-001",
+            contents=chunk,
+            config=types.EmbedContentConfig(
+                output_dimensionality=768,
+                task_type="RETRIEVAL_DOCUMENT",
+            ),
         )
         
         kb_ref.add({

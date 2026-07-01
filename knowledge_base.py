@@ -23,7 +23,9 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
+from google.genai import types
 from typing import Optional
 
 load_dotenv()
@@ -31,14 +33,14 @@ load_dotenv()
 # ------------------------------------------------------------------
 # Constants - match what you already tested in ingest.py
 # ------------------------------------------------------------------
-EMBEDDING_MODEL = "text-embedding-004"
+# text-embedding-004 was removed from the Gemini API; use gemini-embedding-001.
+# Keep 768 dimensions to match the existing Firestore vector index.
+EMBEDDING_MODEL = "gemini-embedding-001"
+EMBEDDING_DIMENSIONS = 768
 KNOWLEDGE_COLLECTION = "knowledge_base"
 
-# Vector search distance. 
-# "COSINE" is the usual default for text embeddings.
-# Change to "EUCLIDEAN" or "DOT_PRODUCT" to match how you created the index in Firestore.
-# We'll verify after your first test.
-DISTANCE_MEASURE = "COSINE"
+# Vector search distance — must match how the Firestore vector index was created.
+DISTANCE_MEASURE = DistanceMeasure.COSINE
 
 # ------------------------------------------------------------------
 # Internal lazy clients
@@ -72,12 +74,16 @@ def _get_clients():
 # Public API
 # ------------------------------------------------------------------
 
-def embed_text(text: str) -> list[float]:
+def embed_text(text: str, *, task_type: str = "RETRIEVAL_QUERY") -> list[float]:
     """Embed a single string using the same model as your ingestion test."""
     client, _ = _get_clients()
     response = client.models.embed_content(
         model=EMBEDDING_MODEL,
-        contents=text
+        contents=text,
+        config=types.EmbedContentConfig(
+            output_dimensionality=EMBEDDING_DIMENSIONS,
+            task_type=task_type,
+        ),
     )
     return response.embeddings[0].values
 
@@ -93,13 +99,13 @@ def retrieve_relevant(query: str, limit: int = 5) -> list[str]:
     """
     client, db = _get_clients()
 
-    # 1. Embed the user's query using the same model
-    query_embedding = embed_text(query)
-    query_vector = Vector(query_embedding)
-
-    # 2. Perform vector similarity search
     # Requires a vector index on knowledge_base/embedding (you said you set one up)
     try:
+        # 1. Embed the user's query using the same model
+        query_embedding = embed_text(query, task_type="RETRIEVAL_QUERY")
+        query_vector = Vector(query_embedding)
+
+        # 2. Perform vector similarity search
         vector_query = db.collection(KNOWLEDGE_COLLECTION).find_nearest(
             vector_field="embedding",
             query_vector=query_vector,
@@ -133,7 +139,7 @@ def add_knowledge(text: str, metadata: Optional[dict] = None) -> None:
     """
     client, db = _get_clients()
 
-    embedding_values = embed_text(text)
+    embedding_values = embed_text(text, task_type="RETRIEVAL_DOCUMENT")
     doc: dict = {
         "text": text,
         "embedding": Vector(embedding_values),
